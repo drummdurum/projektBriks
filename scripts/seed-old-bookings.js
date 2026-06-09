@@ -2,9 +2,9 @@ const { prisma } = require('../database/prisma');
 
 const TIMES = ['10:00', '12:00', '14:00', '16:00', '19:00'];
 const BETALING_OPTIONS = [
-  'Enkelt behandling (650 kr.)',
-  '3 behandlinger - klippekort (1800 kr.)',
-  '10 behandlinger - klippekort (5500 kr.)'
+  'Enkelt behandling (785 kr.)',
+  '3 behandlinger - klippekort (2200 kr.)',
+  '10 behandlinger - klippekort (7500 kr.)'
 ];
 
 function toDateOnly(date) {

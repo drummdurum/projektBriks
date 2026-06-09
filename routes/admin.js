@@ -160,7 +160,7 @@ router.post('/bookings', requireAdmin, async (req, res) => {
             ønsket_dato,
             ønsket_tid,
             behandling = 'Kropsterapi',
-            betaling = 'Enkelt behandling (650 kr.)',
+            betaling = 'Enkelt behandling (785 kr.)',
             besked,
             status = 'confirmed'
         } = req.body;

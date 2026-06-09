@@ -56,7 +56,7 @@ const bookingValidation = [
     
   body('betaling')
     .optional()
-    .isIn(['Enkelt behandling (650 kr.)', '3 behandlinger - klippekort (1800 kr.)', '10 behandlinger - klippekort (5500 kr.)'])
+    .isIn(['Enkelt behandling (785 kr.)', '3 behandlinger - klippekort (2200 kr.)', '10 behandlinger - klippekort (7500 kr.)'])
     .withMessage('Vælg en gyldig betalingsmulighed'),
     
   body('besked')
@@ -130,7 +130,7 @@ router.post('/', bookingLimiter, bookingValidation, async (req, res) => {
       ønsket_dato,
       ønsket_tid,
       behandling = 'Kropsterapi',
-      betaling = 'Enkelt behandling (650 kr.)',
+      betaling = 'Enkelt behandling (785 kr.)',
       besked,
       gdpr_samtykke
     } = req.body;

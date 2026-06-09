@@ -28,7 +28,7 @@ describe('✅ POSITIVE TESTS - Bookings API Success Cases', () => {
         telefon: '21853417',
         ønsket_dato: '2025-02-14',
         ønsket_tid: '14:00',
-        betaling: 'Enkelt behandling (650 kr.)',
+        betaling: 'Enkelt behandling (785 kr.)',
         besked: 'Test booking',
         gdpr_samtykke: 'true'
       };
@@ -65,7 +65,7 @@ describe('✅ POSITIVE TESTS - Bookings API Success Cases', () => {
         ...minimalBooking,
         ønsket_dato: null,
         ønsket_tid: null,
-        betaling: 'Enkelt behandling (650 kr.)',
+        betaling: 'Enkelt behandling (785 kr.)',
         besked: null,
         status: 'pending',
         created_at: new Date()
@@ -104,9 +104,9 @@ describe('✅ POSITIVE TESTS - Bookings API Success Cases', () => {
 
     test('✅ Should handle multiple treatment types', async () => {
       const treatments = [
-        'Enkelt behandling (650 kr.)',
-        '3 behandlinger - klippekort (1800 kr.)',
-        '10 behandlinger - klippekort (5500 kr.)'
+        'Enkelt behandling (785 kr.)',
+        '3 behandlinger - klippekort (2200 kr.)',
+        '10 behandlinger - klippekort (7500 kr.)'
       ];
 
       for (const treatment of treatments) {
