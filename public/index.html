@@ -67,6 +67,22 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="font-sans leading-relaxed text-gray-800 bg-gray-50">
+    <div id="clinic-notice-modal" class="clinic-notice-modal" role="dialog" aria-modal="true" aria-labelledby="clinic-notice-title" hidden>
+        <div class="clinic-notice-backdrop" data-clinic-notice-close></div>
+        <div class="clinic-notice-card">
+            <button type="button" class="clinic-notice-close" aria-label="Luk besked" data-clinic-notice-close>&times;</button>
+            <p class="clinic-notice-kicker">Vigtig information</p>
+            <h2 id="clinic-notice-title">Klinikken i uge 26-27</h2>
+            <p>Klinikken er lukket i dagtimerne p&aring; grund af st&oslash;jgener fra byggeriet p&aring; nabogrunden.</p>
+            <p>Der er enkelte aftentider, som stadig kan bookes.</p>
+            <h3 class="clinic-notice-subtitle">Sommerferie i uge 30-32</h3>
+            <p>Klinikken holder sommerferie i uge 30-32.</p>
+            <div class="clinic-notice-actions">
+                <button type="button" class="clinic-notice-secondary" data-clinic-notice-close>Jeg har l&aelig;st beskeden</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Header Navigation -->
     <header class="bg-sage-green fixed top-0 w-full z-50 shadow-md">
         <nav class="container-custom">

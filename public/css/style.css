@@ -2267,3 +2267,130 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.clinic-notice-modal[hidden] {
+  display: none;
+}
+
+.clinic-notice-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.clinic-notice-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 41, 55, 0.62);
+}
+
+.clinic-notice-card {
+  position: relative;
+  width: min(100%, 34rem);
+  background: #ffffff;
+  color: #374151;
+  border-radius: 0.5rem;
+  box-shadow: 0 24px 80px rgba(17, 24, 39, 0.28);
+  padding: 2rem;
+  line-height: 1.65;
+}
+
+.clinic-notice-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.875rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  background: transparent;
+  color: #4b5563;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.clinic-notice-close:hover,
+.clinic-notice-close:focus {
+  color: #111827;
+}
+
+.clinic-notice-kicker {
+  margin: 0 0 0.5rem;
+  color: #6f8f6d;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.clinic-notice-card h2 {
+  margin: 0 2rem 1rem 0;
+  color: #1f2937;
+  font-size: 1.75rem;
+  font-weight: 300;
+  line-height: 1.2;
+}
+
+.clinic-notice-subtitle {
+  margin: 1.35rem 0 0.65rem;
+  color: #1f2937;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.clinic-notice-card p {
+  margin: 0 0 0.9rem;
+}
+
+.clinic-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.clinic-notice-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.clinic-notice-secondary {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.clinic-notice-secondary:hover,
+.clinic-notice-secondary:focus {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.clinic-notice-open {
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .clinic-notice-card {
+    padding: 1.5rem;
+  }
+
+  .clinic-notice-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .clinic-notice-actions {
+    flex-direction: column;
+  }
+}
