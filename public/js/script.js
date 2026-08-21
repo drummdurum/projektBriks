@@ -1,30 +1,5 @@
 // Smooth scrolling for navigation links
 document.addEventListener('DOMContentLoaded', function() {
-    const clinicNoticeModal = document.getElementById('clinic-notice-modal');
-    const clinicNoticeCloseButtons = document.querySelectorAll('[data-clinic-notice-close]');
-    const clinicNoticeSeenKey = 'birgittesBriksClinicNoticeSeenUge26-27';
-
-    if (clinicNoticeModal && !sessionStorage.getItem(clinicNoticeSeenKey)) {
-        const closeClinicNotice = function() {
-            clinicNoticeModal.setAttribute('hidden', '');
-            document.body.classList.remove('clinic-notice-open');
-            sessionStorage.setItem(clinicNoticeSeenKey, 'true');
-        };
-
-        clinicNoticeModal.removeAttribute('hidden');
-        document.body.classList.add('clinic-notice-open');
-
-        clinicNoticeCloseButtons.forEach(button => {
-            button.addEventListener('click', closeClinicNotice);
-        });
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && !clinicNoticeModal.hasAttribute('hidden')) {
-                closeClinicNotice();
-            }
-        });
-    }
-
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
