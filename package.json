@@ -24,6 +24,7 @@
     "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:booking-hours": "jest booking-schedule.test.js booking-calendar.test.js booking-times-ui.test.js --runInBand",
     "test:db": "node scripts/test-databases.js",
     "test:db:online": "node scripts/test-databases.js --online",
     "test:db:all": "node scripts/test-databases.js --all",

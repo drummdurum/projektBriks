@@ -1,3 +1,4 @@
+const schedule = require('../public/js/booking-schedule');
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { prisma } = require('../database/prisma');
@@ -173,6 +174,9 @@ router.post('/bookings', requireAdmin, async (req, res) => {
             });
         }
         
+        const scheduleError = schedule.validate(ønsket_dato, ønsket_tid);
+        if (scheduleError) return res.status(400).json({ success: false, message: scheduleError });
+
         // Check for conflicts
         const conflictCheck = await prisma.booking.findFirst({
             where: {

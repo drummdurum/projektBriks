@@ -182,6 +182,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        const scheduleError = BookingSchedule.validate(dateInput.value, document.getElementById('ønsket_tid').value);
+        if (scheduleError || (dateInput.value && document.getElementById('ønsket_tid').disabled)) {
+            errorText.textContent = scheduleError || 'Vent på ledige tider, eller vælg en anden dato.';
+            showMessage(errorMessage);
+            return;
+        }
+
         // Show loading state
         submitBtn.disabled = true;
         submitText.classList.add('hidden');
@@ -343,73 +350,45 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeSelect = document.getElementById('ønsket_tid');
     const availabilityMsg = document.getElementById('availability-msg');
 
+    let availabilityRequest = 0;
     async function updateAvailabilityForDate(date) {
+        const requestId = ++availabilityRequest;
+        const previous = timeSelect.value;
+        const allowed = BookingSchedule.timesForDate(date);
+        timeSelect.replaceChildren(new Option('Vælg tidspunkt', ''));
+        allowed.forEach(time => timeSelect.add(new Option(time, time)));
+        timeSelect.value = allowed.includes(previous) ? previous : '';
+        timeSelect.disabled = true;
         if (!date) {
-            // reset
-            Array.from(timeSelect.options).forEach(opt => {
-                opt.disabled = false;
-                opt.textContent = opt.value || 'Vælg tidspunkt';
-                opt.classList.remove('opacity-50');
-            });
             availabilityMsg.classList.add('hidden');
             return;
         }
-
+        if (!allowed.length) {
+            availabilityMsg.textContent = 'Vælg en hverdag. Weekender kan ikke bookes.';
+            availabilityMsg.classList.remove('hidden');
+            return;
+        }
+        availabilityMsg.textContent = 'Henter ledige tider…';
+        availabilityMsg.classList.remove('hidden');
         try {
             const res = await fetch(`/api/availability?date=${encodeURIComponent(date)}`);
             const data = await res.json();
-
-            if (!res.ok) {
-                console.warn('Availability fetch error:', data);
-                availabilityMsg.textContent = 'Kunne ikke hente tilgængelighed.';
-                availabilityMsg.className = 'text-red-600';
-                availabilityMsg.classList.remove('hidden');
-                return;
-            }
-
-            if (data.blocked) {
-                // If entire day blocked
-                Array.from(timeSelect.options).forEach(opt => {
-                    if (opt.value) opt.disabled = true;
-                });
-                availabilityMsg.textContent = 'Denne dato er blokeret og kan ikke bookes.';
-                availabilityMsg.className = 'text-red-600';
-                availabilityMsg.classList.remove('hidden');
-                return;
-            }
-
-            const booked = data.bookedTimes || [];
-            const blocked = data.blockedTimes || [];
-
-            let anyAvailable = false;
-            Array.from(timeSelect.options).forEach(opt => {
-                if (!opt.value) return; // skip placeholder
-                if (booked.includes(opt.value) || blocked.includes(opt.value)) {
-                    opt.disabled = true;
-                    opt.textContent = `${opt.value} – Optaget`;
-                    opt.classList.add('opacity-50');
-                } else {
-                    opt.disabled = false;
-                    opt.textContent = opt.value;
-                    opt.classList.remove('opacity-50');
-                    anyAvailable = true;
-                }
+            if (requestId !== availabilityRequest) return;
+            if (!res.ok) throw new Error('Availability failed');
+            const unavailable = [...(data.bookedTimes || []), ...(data.blockedTimes || [])];
+            Array.from(timeSelect.options).forEach(option => {
+                if (!option.value) return;
+                option.disabled = data.blocked || unavailable.includes(option.value);
+                option.textContent = option.disabled ? `${option.value} – Optaget` : option.value;
             });
-
-            if (!anyAvailable) {
-                availabilityMsg.textContent = 'Ingen ledige tider på denne dato.';
-                availabilityMsg.className = 'text-red-600';
-                availabilityMsg.classList.remove('hidden');
-            } else {
-                availabilityMsg.textContent = 'Viser ledige tider — optagede tidspunkter er skjult/disabled.';
-                availabilityMsg.className = 'text-gray-600';
-                availabilityMsg.classList.remove('hidden');
-            }
+            if (timeSelect.selectedOptions[0]?.disabled) timeSelect.value = '';
+            timeSelect.disabled = data.blocked || !Array.from(timeSelect.options).some(option => option.value && !option.disabled);
+            availabilityMsg.textContent = data.blocked ? 'Denne dato er blokeret og kan ikke bookes.'
+                : timeSelect.disabled ? 'Ingen ledige tider på denne dato.' : 'Vælg en ledig starttid.';
         } catch (err) {
-            console.error('Error fetching availability:', err);
-            availabilityMsg.textContent = 'Der opstod en fejl ved hentning af tilgængelighed.';
-            availabilityMsg.className = 'text-red-600';
-            availabilityMsg.classList.remove('hidden');
+            if (requestId !== availabilityRequest) return;
+            timeSelect.value = '';
+            availabilityMsg.textContent = 'Kunne ikke hente ledige tider. Vælg datoen igen for at prøve igen.';
         }
     }
 
@@ -420,6 +399,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Initialize availability for current value (if any)
-        if (dateInput.value) updateAvailabilityForDate(dateInput.value);
+        updateAvailabilityForDate(dateInput.value);
     }
 });

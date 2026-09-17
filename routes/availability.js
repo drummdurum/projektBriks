@@ -1,3 +1,4 @@
+const schedule = require('../public/js/booking-schedule');
 const express = require('express');
 const router = express.Router();
 const { prisma } = require('../database/prisma');
@@ -12,6 +13,9 @@ router.get('/', async (req, res) => {
     const iso = /^\d{4}-\d{2}-\d{2}$/;
     if (!iso.test(date)) return res.status(400).json({ error: 'Invalid date format, expected YYYY-MM-DD' });
 
+    if (!schedule.parseDate(date)) return res.status(400).json({ error: 'Invalid date' });
+    const allowedTimes = schedule.timesForDate(date);
+    if (!allowedTimes.length) return res.json({ blocked: true, reason: 'Weekend', bookedTimes: [], blockedTimes: [], allowedTimes: [] });
     const targetDate = new Date(date);
 
     // Check blocked periods
@@ -25,7 +29,7 @@ router.get('/', async (req, res) => {
     });
 
     if (blocked) {
-      return res.json({ blocked: true, reason: blocked.reason || null, bookedTimes: [] });
+      return res.json({ blocked: true, reason: blocked.reason || null, bookedTimes: [], blockedTimes: [], allowedTimes: [] });
     }
 
     // Find booked times for that date (exclude cancelled)
@@ -46,7 +50,7 @@ router.get('/', async (req, res) => {
     const bookedTimes = bookings.map(b => b.ønsket_tid).filter(Boolean);
     const blockedTimes = blockedTimesRows.map(b => b.time).filter(Boolean);
 
-    res.json({ blocked: false, bookedTimes, blockedTimes });
+    res.json({ blocked: false, bookedTimes, blockedTimes, allowedTimes });
   } catch (err) {
     console.error('Error fetching availability:', err);
     res.status(500).json({ error: 'Fejl ved hentning af tilgængelighed' });

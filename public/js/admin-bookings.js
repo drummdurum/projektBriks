@@ -370,7 +370,7 @@ function showManualAvailabilityInfo(date) {
 
         const booked = data.bookedTimes || [];
         const blocked = data.blockedTimes || [];
-        const allTimes = ['10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00'];
+        const allTimes = BookingSchedule.timesForDate(date);
 
         let bookedTimes = [];
         let availableTimes = [];
@@ -429,3 +429,22 @@ function setupManualAvailabilityListener() {
         });
     }
 }
+
+// Keep manual booking and time blocking in sync with the weekday schedule.
+document.addEventListener('DOMContentLoaded', () => {
+    [['manualDato', 'manualTid'], ['blockTimeDate', 'blockTimeSlot']].forEach(([dateId, timeId]) => {
+        const date = document.getElementById(dateId);
+        const time = document.getElementById(timeId);
+        if (!date || !time) return;
+        const update = () => {
+            const previous = time.value;
+            time.replaceChildren(new Option('Vælg tidspunkt', ''));
+            BookingSchedule.timesForDate(date.value).forEach(value => time.add(new Option(value, value)));
+            time.value = BookingSchedule.timesForDate(date.value).includes(previous) ? previous : '';
+            date.setCustomValidity(date.value ? (BookingSchedule.validate(date.value, '') || '') : '');
+        };
+        date.addEventListener('change', update);
+        date.form?.addEventListener('reset', () => setTimeout(update, 0));
+        update();
+    });
+});

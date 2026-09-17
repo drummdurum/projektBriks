@@ -1,0 +1,15 @@
+.booking-date-time { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; margin-top: 1.5rem; align-items: start; }
+@media (min-width: 768px) {
+    .booking-date-time { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.booking-calendar { border: 1px solid #d1d5db; border-radius: .5rem; padding: .75rem; background: white; }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+.calendar-header button { padding: .25rem 1rem; font-size: 1.5rem; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .25rem; text-align: center; }
+.calendar-grid span { font-size: .8rem; padding: .3rem 0; }
+.calendar-grid button { padding: .5rem 0; border-radius: .3rem; }
+.calendar-grid button:hover:enabled { background: #e5efe4; }
+.calendar-grid button[aria-pressed="true"] { background: #34583a; color: white; }
+.booking-calendar button:disabled { color: #9ca3af; background: #f3f4f6; cursor: not-allowed; }
+.booking-calendar button:focus-visible { outline: 2px solid #34583a; outline-offset: 2px; }
+.booking-calendar p { font-size: .8rem; margin-top: .6rem; color: #4b5563; }
