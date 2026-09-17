@@ -316,27 +316,35 @@ const sendBookingNotification = async (booking) => {
 
   // Determine recipient (allow override with NOTIFICATION_EMAIL, otherwise use FROM_EMAIL or RESEND_FROM)
   const toEmail = process.env.NOTIFICATION_EMAIL || process.env.FROM_EMAIL || process.env.RESEND_FROM;
-  if (!toEmail) {
+  const recipients = [...new Set([toEmail, process.env.NOTIFICATION_EMAIL_2]
+    .map(email => (email || '').trim()).filter(Boolean))];
+  if (!recipients.length) {
     throw new Error('Ingen admin-modtager konfigureret. Sæt NOTIFICATION_EMAIL eller FROM_EMAIL i miljøet.');
   }
 
-  if (process.env.RESEND_API_KEY) {
-    return await sendEmailResend({
-      from: process.env.RESEND_FROM || process.env.FROM_EMAIL,
-      to: toEmail,
+  const results = await Promise.allSettled(recipients.map(async to => {
+    const mailOptions = {
+      from: process.env.RESEND_API_KEY
+        ? process.env.RESEND_FROM || process.env.FROM_EMAIL
+        : process.env.FROM_EMAIL,
+      to,
       subject: template.subject,
       html: template.html
-    });
-  }
-  
-  const mailOptions = {
-    from: process.env.FROM_EMAIL,
-    to: toEmail, // Send to business email
-    subject: template.subject,
-    html: template.html
-  };
+    };
+    return process.env.RESEND_API_KEY
+      ? sendEmailResend(mailOptions)
+      : transporter.sendMail(mailOptions);
+  }));
 
-  return await transporter.sendMail(mailOptions);
+  const failures = results.flatMap((result, index) => {
+    if (result.status !== 'rejected') return [];
+    console.error(`Notifikationsmail til ${recipients[index]} fejlede:`, result.reason);
+    return [result.reason];
+  });
+  if (failures.length) {
+    throw new AggregateError(failures, `Notifikationsmail fejlede for ${failures.length} af ${recipients.length} modtagere.`);
+  }
+  return results.map(result => result.value);
 };
 
 // Send cancellation email to customer
