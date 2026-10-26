@@ -4,6 +4,8 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { sendBookingConfirmation } = require('../utils/email');
 const { sendEmailResend } = require('../utils/resend');
+const schedule = require('../public/js/booking-schedule');
+const { calendarBookedTimes } = require('../utils/calendarAvailability');
 
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -14,13 +16,17 @@ const contactLimiter = rateLimit({
 router.post('/contact', contactLimiter, [
   body('navn').trim().isLength({ min: 2, max: 100 }),
   body('email').isEmail().isLength({ max: 254 }),
+  body('telefon').trim().matches(/^[\d\s+()-]+$/).isLength({ min: 8, max: 20 }),
   body('besked').trim().isLength({ min: 1, max: 2000 }),
-  body('datoer').isArray({ max: 5 }),
+  body('datoer').isArray({ min: 1, max: 5 }),
   body('datoer.*').custom(value => {
     if (!value || typeof value.dato !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value.dato)) return false;
-    if (typeof value.tid !== 'string' || (value.tid && (!/^([01]\d|2[0-3]):(00|30)$/.test(value.tid) || value.tid < '10:00' || value.tid > '19:00'))) return false;
+    if (typeof value.tid !== 'string' || !value.tid || schedule.validate(value.dato, value.tid)) return false;
     const date = new Date(`${value.dato}T00:00:00Z`);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value.dato;
+    const today = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Copenhagen', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(new Date());
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value.dato && value.dato >= today;
   }),
   body('gdpr_samtykke').custom(value => value === true)
 ], async (req, res) => {
@@ -28,10 +34,19 @@ router.post('/contact', contactLimiter, [
     return res.status(400).json({ error: 'Kontrollér venligst felterne og prøv igen.' });
   }
   try {
+    if (process.env.GOOGLE_CALENDAR_ID) {
+      for (const item of req.body.datoer) {
+        if (!item.tid) continue;
+        const booked = await calendarBookedTimes(item.dato, [item.tid]);
+        if (booked.length) {
+          return res.status(409).json({ error: 'Et ønsket tidspunkt er nu optaget. Vælg en anden tid.' });
+        }
+      }
+    }
     const from = process.env.RESEND_FROM || process.env.FROM_EMAIL;
     const to = process.env.NOTIFICATION_EMAIL || process.env.FROM_EMAIL;
     if (!from || !to) throw new Error('Mail addresses are not configured');
-    const { navn, email, besked, datoer } = req.body;
+    const { navn, email, telefon, besked, datoer } = req.body;
     const datesText = datoer.length
       ? datoer.map(item => {
           const date = new Date(`${item.dato}T12:00:00Z`).toLocaleDateString('da-DK', { timeZone: 'Europe/Copenhagen' });
@@ -41,8 +56,8 @@ router.post('/contact', contactLimiter, [
     await sendEmailResend({
       from,
       to,
-      subject: 'Ny henvendelse fra hjemmesiden',
-      text: `Navn: ${navn}\nE-mail: ${email}\nForeslåede datoer (ikke reserveret): ${datesText}\n\nBesked:\n${besked}`
+      subject: 'Ny bookingforespørgsel fra hjemmesiden',
+      text: `Navn: ${navn}\nE-mail: ${email}\nTelefon: ${telefon}\nForeslåede tider (ikke reserveret): ${datesText}\n\nBesked:\n${besked}`
     });
     res.json({ success: true });
   } catch (err) {

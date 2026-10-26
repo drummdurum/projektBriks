@@ -7,6 +7,11 @@ const { sendBookingConfirmation, sendBookingNotification } = require('../utils/e
 
 const router = express.Router();
 
+function requireAdmin(req, res, next) {
+  if (!req.session?.isAdmin) return res.status(401).json({ error: 'Adgang nægtet' });
+  next();
+}
+
 // Rate limiting for booking requests
 const bookingLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
@@ -72,7 +77,7 @@ const bookingValidation = [
 ];
 
 // GET /api/bookings - Get all bookings (for admin)
-router.get('/', async (req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({
       orderBy: { created_at: 'desc' },
@@ -117,7 +122,7 @@ router.post('/', (req, res) => {
   res.status(503).json({ success: false, error: 'Online booking er midlertidigt lukket. Kontakt os via /booking.' });
 });
 
-router.put('/:id/status', async (req, res) => {
+router.put('/:id/status', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -164,7 +169,7 @@ router.put('/:id/status', async (req, res) => {
 });
 
 // GET /api/bookings/search - Search users by phone or name
-router.get('/search', async (req, res) => {
+router.get('/search', requireAdmin, async (req, res) => {
   try {
     const { q } = req.query;
     

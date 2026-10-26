@@ -10,43 +10,30 @@ function escapeHtml(value) {
 }
 
 // Load bookings and show clickable days + per-day list
-async function loadGoogleCalendarBusyTimes() {
-    const container = document.getElementById('googleCalendarBusyList');
-    if (!container) return;
-    try {
-        const response = await fetch('/api/calendar/google/events');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const events = await response.json();
-        if (!events.length) {
-            container.textContent = 'Ingen kommende optagede tider fra Google Kalender.';
-            return;
-        }
-        const format = new Intl.DateTimeFormat('da-DK', {
-            timeZone: 'Europe/Copenhagen', day: 'numeric', month: 'long', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-        container.replaceChildren(...events.map(event => {
-            const row = document.createElement('div');
-            row.className = 'p-3 bg-blue-50 border border-blue-200 rounded-lg';
-            row.textContent = `${format.format(new Date(event.start_time))} – ${format.format(new Date(event.end_time))}`;
-            return row;
-        }));
-    } catch (error) {
-        console.error('Error loading Google Calendar busy times:', error);
-        container.textContent = 'Kunne ikke hente tider fra Google Kalender.';
-    }
-}
-
 async function loadBookings() {
-    loadGoogleCalendarBusyTimes();
     try {
-        const response = await fetch('/api/admin/bookings');
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const calendarResponse = await fetch('/api/calendar/google/bookings');
+        if (!calendarResponse.ok) throw new Error(`Google Calendar HTTP ${calendarResponse.status}`);
+        const calendar = await calendarResponse.json();
+        let bookings;
+        if (calendar.connected) {
+            const dateFormat = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: 'Europe/Copenhagen', year: 'numeric', month: '2-digit', day: '2-digit'
+            });
+            const timeFormat = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: 'Europe/Copenhagen', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            });
+            bookings = calendar.bookings.map(event => {
+                const start = new Date(event.start);
+                return { ...event, source: 'google', navn: event.name,
+                    ønsket_dato: dateFormat.format(start), ønsket_tid: timeFormat.format(start),
+                    status: 'confirmed', completed: false };
+            });
+        } else {
+            const response = await fetch('/api/admin/bookings');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            bookings = await response.json();
         }
-
-        const bookings = await response.json();
 
         if (!Array.isArray(bookings)) {
             throw new Error('Invalid response format: expected array');
@@ -109,6 +96,17 @@ async function loadBookings() {
 
 // Render bookings for a specific date into the provided container
 function renderBookingsForDate(bookingsForDate, containerEl) {
+    if (bookingsForDate.some(booking => booking.source === 'google')) {
+        containerEl.innerHTML = bookingsForDate.map(booking => `
+            <div class="admin-card p-4 border-l-4 border-blue-500">
+                <h4 class="font-medium text-lg">${escapeHtml(booking.navn)}</h4>
+                <p class="text-sm text-gray-500">Google Kalender · kl. ${escapeHtml(booking.ønsket_tid)}</p>
+                ${booking.description ? `<p class="text-sm text-gray-700 mt-2 whitespace-pre-wrap">${escapeHtml(booking.description)}</p>` : ''}
+                <p class="text-xs text-gray-500 mt-3">Ret aftalen i Google Kalender; siden opdateres derefter.</p>
+            </div>
+        `).join('');
+        return;
+    }
     containerEl.innerHTML = bookingsForDate.map(booking => `
         <div class="admin-card p-4 ${booking.status === 'confirmed' ? 'border-l-4 border-green-500' : booking.status === 'cancelled' ? 'border-l-4 border-red-500' : 'border-l-4 border-yellow-500'}">
             <div class="flex justify-between items-start mb-2">

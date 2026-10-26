@@ -24,6 +24,39 @@ function updateDates() {
   addDate.classList.toggle('hidden', rows.length >= 5);
 }
 
+async function refreshRowTimes(row) {
+  const dateInput = row.querySelector('input[type="date"]');
+  const date = dateInput.value;
+  const time = row.querySelector('select[name="tid"]');
+  const previous = time.value;
+  time.replaceChildren(new Option('Vælg ledig tid', ''));
+  time.disabled = true;
+  if (!date) return;
+  const allowed = BookingSchedule.timesForDate(date);
+  if (!allowed.length) return;
+  try {
+    const response = await fetch(`/api/availability?date=${encodeURIComponent(date)}`);
+    if (!response.ok) throw new Error('Kalenderen er ikke tilgængelig');
+    const availability = await response.json();
+    if (dateInput.value !== date) return;
+    const unavailable = new Set([...availability.bookedTimes, ...availability.blockedTimes]);
+    allowed.forEach(slot => {
+      const option = new Option(unavailable.has(slot) ? `${slot} – Optaget` : slot, slot);
+      option.disabled = availability.blocked || unavailable.has(slot);
+      time.add(option);
+    });
+    time.disabled = availability.blocked || !allowed.some(slot => !unavailable.has(slot));
+    if (previous && !unavailable.has(previous) && allowed.includes(previous)) time.value = previous;
+  } catch (error) {
+    status.textContent = 'Kunne ikke hente ledige tider. Prøv igen senere.';
+    status.className = 'mb-5 rounded-md p-4 bg-red-100 text-red-800';
+  }
+}
+
+dateFields.addEventListener('change', event => {
+  if (event.target.matches('input[type="date"]')) refreshRowTimes(event.target.closest('.date-row'));
+});
+
 addDate.addEventListener('click', () => {
   if (dateFields.querySelectorAll('input[type="date"]').length >= 5) return;
   const row = document.createElement('div');
@@ -49,6 +82,7 @@ addDate.addEventListener('click', () => {
   input.focus();
 });
 updateDates();
+dateFields.querySelectorAll('.date-row').forEach(refreshRowTimes);
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -61,14 +95,20 @@ form.addEventListener('submit', async (event) => {
       dato: row.querySelector('input[type="date"]').value,
       tid: row.querySelector('select[name="tid"]').value
     })).filter(item => item.dato || item.tid);
+    if (!datoer.length || datoer.some(item => !item.dato || !item.tid)) {
+      status.textContent = 'Vælg mindst én dato og en ledig tid.';
+      status.className = 'mb-5 rounded-md p-4 bg-red-100 text-red-800';
+      submit.disabled = false;
+      return;
+    }
     if (datoer.some(item => item.tid && !item.dato)) {
       status.textContent = 'Vælg en dato til hvert foreslået tidspunkt.';
       status.className = 'mb-5 rounded-md p-4 bg-red-100 text-red-800';
       submit.disabled = false;
       return;
     }
-    if (datoer.some(item => item.tid && (item.tid < '10:00' || item.tid > '19:00' || !/:(00|30)$/.test(item.tid)))) {
-      status.textContent = 'Vælg venligst en hel eller halv time mellem kl. 10:00 og 19:00.';
+    if (datoer.some(item => item.tid && BookingSchedule.validate(item.dato, item.tid))) {
+      status.textContent = 'Vælg et gyldigt tidspunkt fra de ledige tider.';
       status.className = 'mb-5 rounded-md p-4 bg-red-100 text-red-800';
       submit.disabled = false;
       return;
@@ -79,6 +119,7 @@ form.addEventListener('submit', async (event) => {
       body: JSON.stringify({
         navn: data.get('navn'),
         email: data.get('email'),
+        telefon: data.get('telefon'),
         besked: data.get('besked'),
         datoer,
         gdpr_samtykke: data.get('gdpr_samtykke') === 'on'
@@ -86,7 +127,7 @@ form.addEventListener('submit', async (event) => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Beskeden kunne ikke sendes.');
-    status.textContent = 'Tak for din besked. Jeg vender tilbage hurtigst muligt.';
+    status.textContent = 'Tak for din forespørgsel. Tiden er først booket, når du får en bekræftelse.';
     status.className = 'mb-5 rounded-md p-4 bg-green-100 text-green-800';
     form.reset();
     dateFields.querySelectorAll('.date-row:not(:first-child)').forEach(row => row.remove());

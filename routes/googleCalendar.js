@@ -1,6 +1,6 @@
 const express = require('express');
 const { timingSafeEqual, randomBytes } = require('crypto');
-const { syncGoogleCalendar } = require('../utils/googleCalendar');
+const { listGoogleCalendarEvents, syncGoogleCalendar } = require('../utils/googleCalendar');
 const { saveRefreshToken } = require('../utils/calendarToken');
 
 const router = express.Router();
@@ -18,18 +18,23 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-router.get('/google/events', requireAdmin, async (req, res) => {
+router.get('/google/bookings', requireAdmin, async (req, res) => {
+  if (!process.env.GOOGLE_CALENDAR_ID) return res.json({ connected: false, bookings: [] });
   try {
-    const events = await require('../database/prisma').prisma.googleCalendarEvent.findMany({
-      where: { end_time: { gt: new Date() } },
-      orderBy: { start_time: 'asc' },
-      take: 100,
-      select: { start_time: true, end_time: true }
-    });
-    res.json(events);
+    const now = new Date();
+    const until = new Date(now);
+    until.setUTCFullYear(until.getUTCFullYear() + 1);
+    const events = await listGoogleCalendarEvents(new Date(now.getTime() - 30 * 86400000), until);
+    res.json({ connected: true, bookings: events.map(event => ({
+      id: event.id,
+      name: event.summary || 'Booking',
+      description: event.description || '',
+      start: event.start?.dateTime || event.start?.date,
+      end: event.end?.dateTime || event.end?.date
+    })) });
   } catch (error) {
-    console.error('Could not list Google Calendar busy times:', error);
-    res.status(500).json({ error: 'Kunne ikke hente kalendertider' });
+    console.error('Could not list Google Calendar bookings:', error);
+    res.status(503).json({ error: 'Google Kalender er ikke tilgængelig' });
   }
 });
 

@@ -1,6 +1,8 @@
-# Google Calendar: receiving calendar changes
+# Google Calendar as the booking source
 
-This branch adds `POST /api/calendar/google/webhook`. Google sends a change notification there; the server fetches busy events from the selected Google calendar and stores only event IDs and start/end times. `/api/availability` blocks overlapping two-hour booking slots. The server also refreshes hourly in case a notification is missed.
+The selected Google calendar contains customer appointments only. Customer availability and the main admin booking list read Google Calendar live. Customers see occupied slots but never other customers' names or notes. A customer sends an email request; that does not reserve a slot. Manual admin bookings create a Google Calendar event. The old `POST /api/bookings` route remains disabled.
+
+The webhook and hourly synchronization keep a minimal local copy of event IDs and times for diagnostics. That copy does not decide customer availability. If Google is unavailable, the availability endpoint returns an error instead of showing unverified free slots.
 
 ## Before connecting
 
@@ -14,7 +16,7 @@ This branch adds `POST /api/calendar/google/webhook`. Google sends a change noti
 
 Google webhook channels expire. Run `npm run calendar:connect` again before the printed expiration and update the channel values. Until automatic renewal is added, the hourly sync continues to catch calendar changes after expiration, with a possible delay of up to an hour.
 
-This branch handles **Google Calendar → availability**. Creating or editing a booking on the website in Google Calendar is a separate step. Online booking is currently disabled in `routes/bookings.js`.
+Existing local booking records are not automatically moved into Google Calendar. Reconcile them before production rollout; otherwise they will not appear in the calendar-based admin list. Cancellation and completion workflows for those older records remain local until reconciliation.
 
 ## Local testing
 
@@ -22,6 +24,6 @@ This branch handles **Google Calendar → availability**. Creating or editing a 
 2. In local `.env`, set `GOOGLE_OAUTH_REDIRECT_URI` to that exact URL, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALENDAR_ID`, `GOOGLE_TOKEN_ENCRYPTION_KEY`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `DATABASE_URL`. Never commit `.env`.
 3. Run `npm install` and start the local PostgreSQL server. This project's existing local database may have no Prisma migration history; in that case `npm run db:deploy` stops with `P3005`. Apply the two calendar SQL migrations with `npx prisma db execute --file prisma/migrations/20261026_google_calendar_events/migration.sql --schema prisma/schema.prisma` and then `npx prisma db execute --file prisma/migrations/20261026_google_calendar_oauth/migration.sql --schema prisma/schema.prisma`. If the existing local database also lacks `bookings.behandling`, apply the older `20260205_add_treatment_betaling_columns`, `20260205_add_users_table`, and `20260407_add_booking_note_default` SQL files in that order with the same `prisma db execute --file ... --schema prisma/schema.prisma` command. Apply each SQL file only once, and only when its schema change is missing.
 4. Run `npm run dev`. Open `http://localhost:3000/admin`, log in, and click **Forbind Google Kalender**.
-5. The Google webhook cannot call `localhost`. The OAuth callback and initial calendar sync still work locally. After adding a test event, restart the server to force another sync, or wait for the hourly sync. A public HTTPS tunnel is needed only to test webhook delivery.
+5. The Google webhook cannot call `localhost`. Live customer availability and the admin booking list still work locally without a webhook. Refresh the page after editing the calendar. A public HTTPS tunnel is needed only to test webhook delivery.
 
 Use the Google account that owns or can access `GOOGLE_CALENDAR_ID`. The OAuth scope permits event access across calendars in the authorized Google account, while application code reads only the configured calendar. Keep admin credentials, OAuth client secret, encryption key, and webhook channel token private. The encryption key must not change after connecting, or the stored refresh token cannot be decrypted.

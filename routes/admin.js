@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const { prisma } = require('../database/prisma');
 const { sendBookingFinalConfirmation, sendBookingCancellation } = require('../utils/email');
+const { createGoogleBooking } = require('../utils/googleCalendar');
 const router = express.Router();
 
 const isDbUnavailableError = (error) => {
@@ -176,6 +177,18 @@ router.post('/bookings', requireAdmin, async (req, res) => {
         
         const scheduleError = schedule.validate(ønsket_dato, ønsket_tid);
         if (scheduleError) return res.status(400).json({ success: false, message: scheduleError });
+
+        if (process.env.GOOGLE_CALENDAR_ID) {
+            const event = await createGoogleBooking({
+                navn, telefon, email, ønsket_dato, ønsket_tid, behandling, betaling, besked
+            });
+            if (!event) {
+                return res.status(409).json({ success: false,
+                    message: 'Tidspunktet er allerede optaget i Google Kalender' });
+            }
+            return res.json({ success: true, booking: { id: event.id },
+                message: 'Booking oprettet i Google Kalender' });
+        }
 
         // Check for conflicts
         const conflictCheck = await prisma.booking.findFirst({

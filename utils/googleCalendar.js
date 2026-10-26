@@ -3,6 +3,60 @@ const { getRefreshToken } = require('./calendarToken');
 
 const calendarId = () => process.env.GOOGLE_CALENDAR_ID;
 
+async function listGoogleCalendarEvents(timeMin, timeMax) {
+  if (!calendarId()) throw new Error('GOOGLE_CALENDAR_ID is not configured');
+  const token = await accessToken();
+  const events = [];
+  let pageToken;
+  do {
+    const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId())}/events`);
+    url.searchParams.set('timeMin', timeMin.toISOString());
+    url.searchParams.set('timeMax', timeMax.toISOString());
+    url.searchParams.set('singleEvents', 'true');
+    url.searchParams.set('maxResults', '2500');
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+    const response = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    if (!response.ok) throw new Error(`Google Calendar request failed: ${response.status}`);
+    const data = await response.json();
+    events.push(...(data.items || []).filter(event => event.status !== 'cancelled'));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+  return events;
+}
+
+async function createGoogleBooking({ navn, telefon, email, ønsket_dato, ønsket_tid,
+  behandling, betaling, besked }) {
+  const { localDateTimeToUtc } = require('./copenhagenTime');
+  const start = localDateTimeToUtc(ønsket_dato, ønsket_tid);
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const existing = await listGoogleCalendarEvents(
+    new Date(start.getTime() - 86400000), new Date(end.getTime() + 86400000)
+  );
+  if (existing.some(event => {
+    const eventStart = new Date(event.start?.dateTime || `${event.start?.date}T00:00:00Z`);
+    const eventEnd = new Date(event.end?.dateTime || `${event.end?.date}T00:00:00Z`);
+    return eventStart < end && eventEnd > start;
+  })) return null;
+  const description = [
+    `Telefon: ${telefon}`,
+    email ? `Email: ${email}` : null,
+    behandling ? `Behandling: ${behandling}` : null,
+    betaling ? `Betaling: ${betaling}` : null,
+    besked ? `Note: ${besked}` : null
+  ].filter(Boolean).join('\n');
+  const response = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId())}/events`,
+    { method: 'POST', headers: {
+      authorization: `Bearer ${await accessToken()}`,
+      'content-type': 'application/json'
+    }, body: JSON.stringify({ summary: navn, description,
+      start: { dateTime: start.toISOString(), timeZone: 'Europe/Copenhagen' },
+      end: { dateTime: end.toISOString(), timeZone: 'Europe/Copenhagen' } }) }
+  );
+  if (!response.ok) throw new Error(`Google Calendar booking creation failed: ${response.status}`);
+  return response.json();
+}
+
 async function accessToken() {
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
   const GOOGLE_REFRESH_TOKEN = await getRefreshToken();
@@ -56,4 +110,4 @@ async function syncGoogleCalendar() {
   return events.length;
 }
 
-module.exports = { accessToken, syncGoogleCalendar };
+module.exports = { accessToken, listGoogleCalendarEvents, createGoogleBooking, syncGoogleCalendar };

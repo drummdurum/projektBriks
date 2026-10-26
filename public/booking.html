@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kontakt Birgittes Briks | Stenløse</title>
-  <meta name="description" content="Online booking er midlertidigt lukket. Skriv til Birgittes Briks eller ring på +45 21 85 34 17.">
+  <title>Bookingforespørgsel | Birgittes Briks</title>
+  <meta name="description" content="Se ledige tider og send en bookingforespørgsel til Birgittes Briks.">
   <link rel="canonical" href="https://www.birgittesbriks.dk/booking">
   <link rel="icon" type="image/png" href="/images/logo.png">
   <link rel="stylesheet" href="/css/style.css">
@@ -35,15 +35,15 @@
   <main class="mt-20">
     <section class="bg-sage-green py-16">
       <div class="container-custom text-center">
-        <h1 class="text-4xl md:text-5xl font-light text-white mb-6">Kontakt Birgittes Briks</h1>
-        <p class="text-xl text-white opacity-90 max-w-2xl mx-auto">Online booking er midlertidigt lukket. Du er velkommen til at sende en besked eller ringe til mig.</p>
+        <h1 class="text-4xl md:text-5xl font-light text-white mb-6">Bookingforespørgsel</h1>
+        <p class="text-xl text-white opacity-90 max-w-2xl mx-auto">Se ledige tider i bookingkalenderen, og send en forespørgsel. Tiden er først booket, når du har fået en bekræftelse.</p>
       </div>
     </section>
     <section class="section-padding">
       <div class="container-custom max-w-4xl grid md:grid-cols-2 gap-8">
         <div class="bg-white shadow-lg rounded-lg p-8">
-          <h2 class="text-2xl font-light mb-4">Send en besked</h2>
-          <p class="text-gray-600 mb-6">Skriv dit spørgsmål her, så vender jeg tilbage hurtigst muligt. En besked er ikke en booking.</p>
+          <h2 class="text-2xl font-light mb-4">Send en bookingforespørgsel</h2>
+          <p class="text-gray-600 mb-6">Vælg et tidspunkt og skriv en besked. Forespørgslen reserverer ikke tiden.</p>
           <div id="contact-status" role="status" aria-live="polite" class="hidden mb-5 rounded-md p-4"></div>
           <form id="contact-form">
             <div class="mb-4">
@@ -55,8 +55,12 @@
               <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
             </div>
             <div class="mb-4">
-              <label for="dato-1" class="block text-sm font-medium mb-2">Foreslåede datoer og tidspunkter (valgfrit)</label>
-              <p class="text-sm text-gray-600 mb-3">Du kan vælge op til fem datoer med et valgfrit tidspunkt fra kl. 10:00 til 19:00 i hele eller halve timer. De er kun ønsker og bliver ikke reserveret.</p>
+              <label for="telefon" class="block text-sm font-medium mb-2">Telefon *</label>
+              <input id="telefon" name="telefon" type="tel" autocomplete="tel" maxlength="20" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+            </div>
+            <div class="mb-4">
+              <label for="dato-1" class="block text-sm font-medium mb-2">Foreslåede datoer og tidspunkter *</label>
+              <p class="text-sm text-gray-600 mb-3">Vælg op til fem ønskede tider. Ledige tider hentes fra bookingkalenderen. En forespørgsel reserverer ikke tiden.</p>
               <div id="date-fields" class="space-y-3">
                 <div class="date-row flex flex-wrap gap-2 items-center">
                   <input id="dato-1" name="dato" type="date" class="flex-1 min-w-36 px-3 py-2 border border-gray-300 rounded-md">
@@ -94,7 +98,7 @@
               <input type="checkbox" name="gdpr_samtykke" required class="mt-1">
               <span>Jeg accepterer, at mine oplysninger bruges til at besvare min henvendelse i henhold til <a href="/privatliv" class="text-sage-green underline">privatlivspolitikken</a>. *</span>
             </label>
-            <button id="contact-submit" type="submit" class="bg-sage-green hover:bg-green-600 text-white font-medium py-3 px-8 rounded-md disabled:opacity-50">Send besked</button>
+            <button id="contact-submit" type="submit" class="bg-sage-green hover:bg-green-600 text-white font-medium py-3 px-8 rounded-md disabled:opacity-50">Send forespørgsel</button>
           </form>
         </div>
         <aside class="bg-white shadow-lg rounded-lg p-8 self-start text-center">
@@ -112,6 +116,7 @@
     </div>
   </footer>
   <script src="/js/script.js"></script>
+  <script src="/js/booking-schedule.js"></script>
   <script src="/js/contact.js"></script>
 </body>
 </html>

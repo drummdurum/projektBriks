@@ -27,7 +27,7 @@ afterEach(() => { delete global.fetch; });
 
 test('only an administrator can start Google consent', async () => {
   expect((await request(app).get('/api/calendar/google/connect')).status).toBe(401);
-  expect((await request(app).get('/api/calendar/google/events')).status).toBe(401);
+  expect((await request(app).get('/api/calendar/google/bookings')).status).toBe(401);
 });
 
 test('OAuth callback rejects invalid state without saving a token', async () => {
