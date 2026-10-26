@@ -15,3 +15,12 @@ This branch adds `POST /api/calendar/google/webhook`. Google sends a change noti
 Google webhook channels expire. Run `npm run calendar:connect` again before the printed expiration and update the channel values. Until automatic renewal is added, the hourly sync continues to catch calendar changes after expiration, with a possible delay of up to an hour.
 
 This branch handles **Google Calendar → availability**. Creating or editing a booking on the website in Google Calendar is a separate step. Online booking is currently disabled in `routes/bookings.js`.
+
+## Local testing
+
+1. Add `http://localhost:3000/api/calendar/google/callback` as an additional authorized redirect URI on the Google OAuth web client.
+2. In local `.env`, set `GOOGLE_OAUTH_REDIRECT_URI` to that exact URL, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALENDAR_ID`, `GOOGLE_TOKEN_ENCRYPTION_KEY`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `DATABASE_URL`. Never commit `.env`.
+3. Run `npm install`, `npm run db:deploy`, and `npm run dev`. Open `http://localhost:3000/admin`, log in, and click **Forbind Google Kalender**.
+4. The Google webhook cannot call `localhost`. The OAuth callback and initial calendar sync still work locally. After adding a test event, restart the server to force another sync, or wait for the hourly sync. A public HTTPS tunnel is needed only to test webhook delivery.
+
+Use the Google account that owns or can access `GOOGLE_CALENDAR_ID`. The OAuth scope permits event access across calendars in the authorized Google account, while application code reads only the configured calendar. Keep admin credentials, OAuth client secret, encryption key, and webhook channel token private. The encryption key must not change after connecting, or the stored refresh token cannot be decrypted.

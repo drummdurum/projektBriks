@@ -19,6 +19,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const sessionStoreType = (process.env.SESSION_STORE || 'memory').toLowerCase();
 const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET must be configured in production');
+}
 
 // Security middleware
 app.use(helmet({
@@ -96,6 +99,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
