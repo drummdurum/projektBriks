@@ -4,6 +4,8 @@ The selected Google calendar contains customer appointments only. Customer avail
 
 The webhook and hourly synchronization keep a minimal local copy of event IDs and times for diagnostics. That copy does not decide customer availability. If Google is unavailable, the availability endpoint returns an error instead of showing unverified free slots.
 
+To connect an appointment to an existing customer, put the customer's Danish phone number on the **first line** of the Google Calendar description, for example `12 34 56 78` or `Telefon: +45 12 34 56 78`. Further lines may contain notes. The admin booking list shows a customer match and an **Åbn kunde** button only when exactly one customer has that normalized phone number. The customer-facing page never receives the match or the description.
+
 ## Before connecting
 
 1. Enable **Google Calendar API** in Google Cloud.

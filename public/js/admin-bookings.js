@@ -101,10 +101,23 @@ function renderBookingsForDate(bookingsForDate, containerEl) {
             <div class="admin-card p-4 border-l-4 border-blue-500">
                 <h4 class="font-medium text-lg">${escapeHtml(booking.navn)}</h4>
                 <p class="text-sm text-gray-500">Google Kalender · kl. ${escapeHtml(booking.ønsket_tid)}</p>
+                ${booking.customer ? `<div class="mt-2 rounded-lg bg-green-50 border border-green-200 p-3 text-sm">
+                    <span class="font-medium">Kunde fundet:</span>
+                    ${escapeHtml(`${booking.customer.navn} ${booking.customer.efternavn || ''}`.trim())}
+                    · ${escapeHtml(booking.customer.telefon)}
+                    <button type="button" class="matched-customer-btn block mt-1 text-sage-green underline" data-user-id="${booking.customer.id}">Åbn kunde</button>
+                </div>` : ''}
                 ${booking.description ? `<p class="text-sm text-gray-700 mt-2 whitespace-pre-wrap">${escapeHtml(booking.description)}</p>` : ''}
                 <p class="text-xs text-gray-500 mt-3">Ret aftalen i Google Kalender; siden opdateres derefter.</p>
             </div>
         `).join('');
+        containerEl.querySelectorAll('.matched-customer-btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                switchTab('manual-booking');
+                await loadAllUsers();
+                openEditUserModal(Number(button.dataset.userId));
+            });
+        });
         return;
     }
     containerEl.innerHTML = bookingsForDate.map(booking => `

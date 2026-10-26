@@ -2,6 +2,8 @@ const express = require('express');
 const { timingSafeEqual, randomBytes } = require('crypto');
 const { listGoogleCalendarEvents, syncGoogleCalendar } = require('../utils/googleCalendar');
 const { saveRefreshToken } = require('../utils/calendarToken');
+const { prisma } = require('../database/prisma');
+const { normalizeDanishPhone, phoneFromFirstLine } = require('../utils/customerPhone');
 
 const router = express.Router();
 let pendingSync = null;
@@ -25,12 +27,32 @@ router.get('/google/bookings', requireAdmin, async (req, res) => {
     const until = new Date(now);
     until.setUTCFullYear(until.getUTCFullYear() + 1);
     const events = await listGoogleCalendarEvents(new Date(now.getTime() - 30 * 86400000), until);
+    const phones = new Set(events.map(event => phoneFromFirstLine(event.description)).filter(Boolean));
+    let customersByPhone = new Map();
+    if (phones.size) {
+      try {
+        const customers = await prisma.user.findMany({
+          select: { id: true, navn: true, efternavn: true, telefon: true, email: true }
+        });
+        customersByPhone = customers.reduce((map, customer) => {
+          const phone = normalizeDanishPhone(customer.telefon);
+          if (phone && phones.has(phone)) map.set(phone, [...(map.get(phone) || []), customer]);
+          return map;
+        }, new Map());
+      } catch (error) {
+        console.error('Could not match Google Calendar customers:', error);
+      }
+    }
     res.json({ connected: true, bookings: events.map(event => ({
       id: event.id,
       name: event.summary || 'Booking',
       description: event.description || '',
       start: event.start?.dateTime || event.start?.date,
-      end: event.end?.dateTime || event.end?.date
+      end: event.end?.dateTime || event.end?.date,
+      customer: (() => {
+        const matches = customersByPhone.get(phoneFromFirstLine(event.description)) || [];
+        return matches.length === 1 ? matches[0] : null;
+      })()
     })) });
   } catch (error) {
     console.error('Could not list Google Calendar bookings:', error);
