@@ -10,7 +10,35 @@ function escapeHtml(value) {
 }
 
 // Load bookings and show clickable days + per-day list
+async function loadGoogleCalendarBusyTimes() {
+    const container = document.getElementById('googleCalendarBusyList');
+    if (!container) return;
+    try {
+        const response = await fetch('/api/calendar/google/events');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const events = await response.json();
+        if (!events.length) {
+            container.textContent = 'Ingen kommende optagede tider fra Google Kalender.';
+            return;
+        }
+        const format = new Intl.DateTimeFormat('da-DK', {
+            timeZone: 'Europe/Copenhagen', day: 'numeric', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        container.replaceChildren(...events.map(event => {
+            const row = document.createElement('div');
+            row.className = 'p-3 bg-blue-50 border border-blue-200 rounded-lg';
+            row.textContent = `${format.format(new Date(event.start_time))} – ${format.format(new Date(event.end_time))}`;
+            return row;
+        }));
+    } catch (error) {
+        console.error('Error loading Google Calendar busy times:', error);
+        container.textContent = 'Kunne ikke hente tider fra Google Kalender.';
+    }
+}
+
 async function loadBookings() {
+    loadGoogleCalendarBusyTimes();
     try {
         const response = await fetch('/api/admin/bookings');
 

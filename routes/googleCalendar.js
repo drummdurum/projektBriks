@@ -18,6 +18,21 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+router.get('/google/events', requireAdmin, async (req, res) => {
+  try {
+    const events = await require('../database/prisma').prisma.googleCalendarEvent.findMany({
+      where: { end_time: { gt: new Date() } },
+      orderBy: { start_time: 'asc' },
+      take: 100,
+      select: { start_time: true, end_time: true }
+    });
+    res.json(events);
+  } catch (error) {
+    console.error('Could not list Google Calendar busy times:', error);
+    res.status(500).json({ error: 'Kunne ikke hente kalendertider' });
+  }
+});
+
 router.get('/google/connect', requireAdmin, (req, res) => {
   const { GOOGLE_CLIENT_ID, GOOGLE_OAUTH_REDIRECT_URI } = process.env;
   if (!GOOGLE_CLIENT_ID || !GOOGLE_OAUTH_REDIRECT_URI) return res.status(503).send('Google OAuth er ikke konfigureret.');
