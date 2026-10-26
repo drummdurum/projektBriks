@@ -1,9 +1,11 @@
 const { prisma } = require('../database/prisma');
+const { getRefreshToken } = require('./calendarToken');
 
 const calendarId = () => process.env.GOOGLE_CALENDAR_ID;
 
 async function accessToken() {
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN } = process.env;
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+  const GOOGLE_REFRESH_TOKEN = await getRefreshToken();
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
     throw new Error('Google Calendar credentials are not configured');
   }

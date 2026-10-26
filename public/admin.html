@@ -63,7 +63,6 @@
                         <input type="password" 
                                id="password" 
                                name="password" 
-                               value="birgitte2025"
                                required 
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-green focus:border-transparent transition-colors"
                                placeholder="Indtast adgangskode">
@@ -80,6 +79,11 @@
 
         <!-- Admin Dashboard (hidden until logged in) -->
         <div id="adminDashboard" class="hidden">
+            <div class="admin-card mb-6">
+                <h2 class="text-lg font-medium mb-2">Google Kalender</h2>
+                <p class="text-sm text-gray-600 mb-3">Forbind den Google-konto, som har adgang til bookingkalenderen.</p>
+                <a href="/api/calendar/google/connect" class="inline-block bg-sage-green text-white px-4 py-2 rounded-lg">Forbind Google Kalender</a>
+            </div>
             <!-- Navigation Tabs -->
             <div class="mb-8">
                 <div class="admin-card" style="padding: 0.25rem;">

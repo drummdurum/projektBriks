@@ -51,10 +51,10 @@ router.post('/login', async (req, res) => {
         
         // For now, use environment variables for admin credentials
         // In production, these should be stored in database with hashed passwords
-        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-        const adminPassword = process.env.ADMIN_PASSWORD || 'birgitte2025';
+        const adminUsername = process.env.ADMIN_USERNAME || (process.env.NODE_ENV === 'production' ? null : 'admin');
+        const adminPassword = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'production' ? null : 'birgitte2025');
         
-        if (username === adminUsername && password === adminPassword) {
+        if (adminUsername && adminPassword && username === adminUsername && password === adminPassword) {
             req.session.isAdmin = true;
             req.session.adminUser = { username };
 

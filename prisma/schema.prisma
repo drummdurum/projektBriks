@@ -85,6 +85,14 @@ model GoogleCalendarEvent {
   @@index([start_time, end_time])
 }
 
+model GoogleCalendarConnection {
+  id                    Int      @id
+  encrypted_refresh_token String
+  connected_at          DateTime @default(now())
+
+  @@map("google_calendar_connection")
+}
+
 model Session {
   sid    String   @id
   sess   Json

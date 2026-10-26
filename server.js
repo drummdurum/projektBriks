@@ -13,6 +13,7 @@ const { initDatabase } = require('./database/init');
 const bookingsRouter = require('./routes/bookings');
 const pagesRouter = require('./routes/pages');
 const { syncGoogleCalendar } = require('./utils/googleCalendar');
+const { getRefreshToken } = require('./utils/calendarToken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -186,9 +187,14 @@ const startServer = async () => {
             console.log(`📱 Tryk Ctrl+C for at stoppe serveren`);
             console.log(`🗄️ Database: ${process.env.NODE_ENV === 'production' ? 'PostgreSQL (Railway)' : 'Local PostgreSQL'}`);
         });
-        if (process.env.GOOGLE_CALENDAR_ID && process.env.GOOGLE_REFRESH_TOKEN) {
-            const refresh = () => syncGoogleCalendar().catch(error =>
-                console.error('Periodic Google Calendar sync failed:', error));
+        if (process.env.GOOGLE_CALENDAR_ID) {
+            const refresh = async () => {
+                try {
+                    if (await getRefreshToken()) await syncGoogleCalendar();
+                } catch (error) {
+                    console.error('Periodic Google Calendar sync failed:', error);
+                }
+            };
             refresh();
             setInterval(refresh, 60 * 60 * 1000).unref();
         }

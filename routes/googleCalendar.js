@@ -1,6 +1,7 @@
 const express = require('express');
-const { timingSafeEqual } = require('crypto');
+const { timingSafeEqual, randomBytes } = require('crypto');
 const { syncGoogleCalendar } = require('../utils/googleCalendar');
+const { saveRefreshToken } = require('../utils/calendarToken');
 
 const router = express.Router();
 let pendingSync = null;
@@ -11,6 +12,68 @@ function sameSecret(received, expected) {
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+
+function requireAdmin(req, res, next) {
+  if (!req.session?.isAdmin) return res.sendStatus(401);
+  next();
+}
+
+router.get('/google/connect', requireAdmin, (req, res) => {
+  const { GOOGLE_CLIENT_ID, GOOGLE_OAUTH_REDIRECT_URI } = process.env;
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_OAUTH_REDIRECT_URI) return res.status(503).send('Google OAuth er ikke konfigureret.');
+  const state = randomBytes(32).toString('hex');
+  req.session.googleOAuthState = state;
+  req.session.save(error => {
+    if (error) return res.sendStatus(503);
+    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.search = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: GOOGLE_OAUTH_REDIRECT_URI,
+      response_type: 'code',
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      access_type: 'offline',
+      prompt: 'consent',
+      state
+    }).toString();
+    res.redirect(url.toString());
+  });
+});
+
+router.get('/google/callback', requireAdmin, async (req, res) => {
+  const expectedState = req.session.googleOAuthState;
+  delete req.session.googleOAuthState;
+  if (!sameSecret(req.query.state, expectedState) || !req.query.code) {
+    return res.status(400).send('Google-login kunne ikke gennemføres. Prøv igen fra administrationen.');
+  }
+  try {
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code: req.query.code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: process.env.GOOGLE_OAUTH_REDIRECT_URI,
+        grant_type: 'authorization_code'
+      })
+    });
+    if (!response.ok) throw new Error(`Google token exchange failed: ${response.status}`);
+    const tokens = await response.json();
+    if (!tokens.refresh_token) throw new Error('Google did not return a refresh token');
+    if (!process.env.GOOGLE_CALENDAR_ID) throw new Error('GOOGLE_CALENDAR_ID is not configured');
+    const check = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(process.env.GOOGLE_CALENDAR_ID)}/events?maxResults=1`,
+      { headers: { authorization: `Bearer ${tokens.access_token}` } }
+    );
+    if (!check.ok) throw new Error(`Selected Google calendar is not accessible: ${check.status}`);
+    await saveRefreshToken(tokens.refresh_token);
+    await syncGoogleCalendar();
+    res.type('html').send('<p>Google Kalender er forbundet. Du kan lukke denne fane og vende tilbage til administrationen.</p>');
+  } catch (error) {
+    console.error('Google Calendar OAuth failed:', error);
+    res.status(502).send('Google Kalender kunne ikke forbindes. Kontroller serveropsætningen og prøv igen.');
+  }
+});
 
 router.post('/google/webhook', (req, res) => {
   const { GOOGLE_CALENDAR_CHANNEL_ID, GOOGLE_CALENDAR_CHANNEL_TOKEN,
