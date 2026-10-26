@@ -48,8 +48,8 @@ function renderManualUserQuickList() {
             <button type="button"
                     onclick="selectManualUserFromQuickList(${user.id})"
                     class="w-full text-left p-3 rounded-lg border transition-colors ${isSelected ? 'bg-green-100 border-green-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}">
-                <p class="font-medium text-gray-900">${user.navn} ${user.efternavn || ''}</p>
-                <p class="text-xs text-gray-600">📞 ${user.telefon}${user.email ? ` • ✉️ ${user.email}` : ''}</p>
+                <p class="font-medium text-gray-900">${escapeHtml(user.navn)} ${escapeHtml(user.efternavn || '')}</p>
+                <p class="text-xs text-gray-600">📞 ${escapeHtml(user.telefon)}${user.email ? ` • ✉️ ${escapeHtml(user.email)}` : ''}</p>
             </button>
         `;
     }).join('');
@@ -150,9 +150,9 @@ function renderSelectedManualUser() {
             <button type="button" onclick="openSelectedManualUserHistoryModal()" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-sm" title="Se tidligere bookinger">📋</button>
         </div>
         <div class="text-sm text-gray-700 space-y-1">
-            <p>👤 ${selectedManualUser.navn} ${selectedManualUser.efternavn || ''}</p>
-            <p>📞 ${selectedManualUser.telefon || '-'}</p>
-            <p>✉️ ${selectedManualUser.email || '-'}</p>
+            <p>👤 ${escapeHtml(selectedManualUser.navn)} ${escapeHtml(selectedManualUser.efternavn || '')}</p>
+            <p>📞 ${escapeHtml(selectedManualUser.telefon || '-')}</p>
+            <p>✉️ ${escapeHtml(selectedManualUser.email || '-')}</p>
         </div>
     `;
 }
@@ -256,11 +256,11 @@ async function openSelectedManualUserHistoryModal() {
         list.innerHTML = matches.map(b => `
             <div class="p-3 border border-gray-200 rounded-lg bg-gray-50">
                 <div class="flex items-center justify-between">
-                    <p class="font-medium text-gray-900">${formatDate(b.ønsket_dato)} kl. ${b.ønsket_tid || '-'}</p>
+                    <p class="font-medium text-gray-900">${formatDate(b.ønsket_dato)} kl. ${escapeHtml(b.ønsket_tid || '-')}</p>
                     <span class="text-xs px-2 py-1 rounded ${b.completed ? 'bg-gray-200 text-gray-800' : b.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${b.completed ? 'Færdig' : getStatusText(b.status)}</span>
                 </div>
-                <p class="text-sm text-gray-700 mt-1">${b.behandling || 'Kropsterapi'} · ${b.betaling || '-'}</p>
-                ${b.besked ? `<p class="text-sm text-gray-600 mt-1">📝 ${b.besked}</p>` : ''}
+                <p class="text-sm text-gray-700 mt-1">${escapeHtml(b.behandling || 'Kropsterapi')} · ${escapeHtml(b.betaling || '-')}</p>
+                ${b.besked ? `<p class="text-sm text-gray-600 mt-1">📝 ${escapeHtml(b.besked)}</p>` : ''}
             </div>
         `).join('');
     } catch (error) {
@@ -313,7 +313,7 @@ async function loadManualUserBookingHistory() {
                         : '<span class="text-xs text-gray-500">Ingen note</span>'
                     }
                 </div>
-                <p class="text-sm text-gray-700 mt-1">${formatDate(b.ønsket_dato)} kl. ${b.ønsket_tid || '-'}</p>
+                <p class="text-sm text-gray-700 mt-1">${formatDate(b.ønsket_dato)} kl. ${escapeHtml(b.ønsket_tid || '-')}</p>
                 <p class="text-xs text-gray-600 mt-1">${escapeHtml(b.behandling || 'Kropsterapi')} · ${escapeHtml(b.betaling || '-')}</p>
             </div>
         `).join('');
@@ -375,10 +375,10 @@ function renderUsersList() {
     container.innerHTML = filteredUsers.map(user => `
         <div class="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
             <div>
-                <p class="font-medium text-gray-900">${user.navn} ${user.efternavn}</p>
+                <p class="font-medium text-gray-900">${escapeHtml(user.navn)} ${escapeHtml(user.efternavn)}</p>
                 <div class="text-sm text-gray-600">
-                    <span>📞 ${user.telefon}</span>
-                    ${user.email ? `<span class="ml-2">✉️ ${user.email}</span>` : ''}
+                    <span>📞 ${escapeHtml(user.telefon)}</span>
+                    ${user.email ? `<span class="ml-2">✉️ ${escapeHtml(user.email)}</span>` : ''}
                 </div>
             </div>
             <button type="button" onclick="openEditUserModal(${user.id})" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
@@ -459,13 +459,19 @@ async function handleUserSearch(e) {
         const data = await response.json();
         
         if (data.success && data.users && data.users.length > 0) {
-            resultsContainer.innerHTML = data.users.map(user => `
+            resultsContainer.innerHTML = data.users.map((user, index) => `
                 <li class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors"
-                    onclick="selectUser(${user.id}, '${user.navn} ${user.efternavn}', '${user.telefon}', '${user.email || ''}')">
-                    <div class="font-medium text-gray-900">${user.navn} ${user.efternavn}</div>
-                    <div class="text-sm text-gray-600">${user.telefon}${user.email ? ' • ' + user.email : ''}</div>
+                    data-user-index="${index}">
+                    <div class="font-medium text-gray-900">${escapeHtml(user.navn)} ${escapeHtml(user.efternavn)}</div>
+                    <div class="text-sm text-gray-600">${escapeHtml(user.telefon)}${user.email ? ' • ' + escapeHtml(user.email) : ''}</div>
                 </li>
             `).join('');
+            resultsContainer.querySelectorAll('[data-user-index]').forEach(item => {
+                item.addEventListener('click', () => {
+                    const user = data.users[Number(item.dataset.userIndex)];
+                    selectUser(user.id, `${user.navn} ${user.efternavn}`, user.telefon, user.email || '');
+                });
+            });
             resultsContainer.classList.remove('hidden');
         } else {
             resultsContainer.innerHTML = '<li class="px-4 py-3 text-gray-500 text-center">Ingen brugere fundet</li>';
@@ -577,14 +583,14 @@ async function handleImportUsers(e) {
         
         if (result.success) {
             statusDiv.className = 'mt-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg';
-            let html = `✅ ${result.message}<br>`;
-            html += `• Oprettet: ${result.created}<br>`;
-            html += `• Eksisterede allerede: ${result.skipped}`;
+            let html = `✅ ${escapeHtml(result.message)}<br>`;
+            html += `• Oprettet: ${escapeHtml(result.created)}<br>`;
+            html += `• Eksisterede allerede: ${escapeHtml(result.skipped)}`;
             
             if (result.errors && result.errors.length > 0) {
                 html += `<br><br>⚠️ Fejl:<br>`;
                 result.errors.forEach(err => {
-                    html += `• ${err}<br>`;
+                    html += `• ${escapeHtml(err)}<br>`;
                 });
             }
             
@@ -592,11 +598,11 @@ async function handleImportUsers(e) {
             textarea.value = '';
         } else {
             statusDiv.className = 'mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg';
-            statusDiv.innerHTML = `❌ ${result.message}`;
+            statusDiv.textContent = `❌ ${result.message}`;
         }
     } catch (error) {
         statusDiv.className = 'mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg';
-        statusDiv.innerHTML = `❌ Fejl: ${error.message}`;
+        statusDiv.textContent = `❌ Fejl: ${error.message}`;
         statusDiv.classList.remove('hidden');
     }
 }

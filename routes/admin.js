@@ -1,6 +1,7 @@
 const schedule = require('../public/js/booking-schedule');
 const express = require('express');
 const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
 const { prisma } = require('../database/prisma');
 const { sendBookingFinalConfirmation, sendBookingCancellation } = require('../utils/email');
 const { createGoogleBooking } = require('../utils/googleCalendar');
@@ -45,8 +46,17 @@ const requireAdmin = (req, res, next) => {
     next();
 };
 
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: { success: false, message: 'For mange loginforsøg. Prøv igen om 15 minutter.' }
+});
+
 // Admin login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     try {
         const { username, password } = req.body;
         
@@ -56,21 +66,26 @@ router.post('/login', async (req, res) => {
         const adminPassword = process.env.ADMIN_PASSWORD;
         
         if (adminUsername && adminPassword && username === adminUsername && password === adminPassword) {
-            req.session.isAdmin = true;
-            req.session.adminUser = { username };
-
-            return req.session.save((sessionError) => {
-                if (sessionError) {
-                    console.error('Admin login session save error:', sessionError);
-                    return res.status(503).json({
-                        success: false,
-                        message: 'Login midlertidigt utilgængeligt. Prøv igen om lidt.'
-                    });
+            return req.session.regenerate((regenerateError) => {
+                if (regenerateError) {
+                    console.error('Admin session regeneration failed:', regenerateError);
+                    return res.status(503).json({ success: false, message: 'Login midlertidigt utilgængeligt.' });
                 }
+                req.session.isAdmin = true;
+                req.session.adminUser = { username };
+                req.session.save((sessionError) => {
+                    if (sessionError) {
+                        console.error('Admin login session save error:', sessionError);
+                        return res.status(503).json({
+                            success: false,
+                            message: 'Login midlertidigt utilgængeligt. Prøv igen om lidt.'
+                        });
+                    }
 
-                res.json({
-                    success: true,
-                    user: { username }
+                    res.json({
+                        success: true,
+                        user: { username }
+                    });
                 });
             });
         } else {

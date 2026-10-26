@@ -124,16 +124,16 @@ function renderBookingsForDate(bookingsForDate, containerEl) {
         <div class="admin-card p-4 ${booking.status === 'confirmed' ? 'border-l-4 border-green-500' : booking.status === 'cancelled' ? 'border-l-4 border-red-500' : 'border-l-4 border-yellow-500'}">
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <h4 class="font-medium text-lg">${booking.navn}</h4>
-                    <p class="text-sm text-gray-500">Booking #${booking.id} · kl. ${booking.ønsket_tid}</p>
+                    <h4 class="font-medium text-lg">${escapeHtml(booking.navn)}</h4>
+                    <p class="text-sm text-gray-500">Booking #${escapeHtml(booking.id)} · kl. ${escapeHtml(booking.ønsket_tid)}</p>
                 </div>
-                <div class="text-sm status-badge status-${booking.status}">${getStatusText(booking.status)}</div>
+                <div class="text-sm status-badge status-${escapeHtml(booking.status)}">${escapeHtml(getStatusText(booking.status))}</div>
             </div>
             <div class="text-sm text-gray-700 mb-3">
-                <div>📞 ${booking.telefon}</div>
-                ${booking.email ? `<div>✉️ ${booking.email}</div>` : ''}
-                <div>💆‍♀️ ${booking.behandling || 'Kropsterapi'} - ${booking.betaling}</div>
-                ${booking.besked ? `<div class="mt-2">💬 ${booking.besked}</div>` : ''}
+                <div>📞 ${escapeHtml(booking.telefon)}</div>
+                ${booking.email ? `<div>✉️ ${escapeHtml(booking.email)}</div>` : ''}
+                <div>💆‍♀️ ${escapeHtml(booking.behandling || 'Kropsterapi')} - ${escapeHtml(booking.betaling)}</div>
+                ${booking.besked ? `<div class="mt-2">💬 ${escapeHtml(booking.besked)}</div>` : ''}
             </div>
             <div class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <label for="note-${booking.id}" class="block text-xs font-medium text-gray-700 mb-2">Noter</label>
@@ -243,16 +243,16 @@ async function loadCompletedBookings() {
             <div class="admin-card p-4 border-l-4 border-gray-500">
                 <div class="flex justify-between items-start mb-2">
                     <div>
-                        <h4 class="font-medium text-lg">${booking.navn}</h4>
-                        <p class="text-sm text-gray-500">Booking #${booking.id} · ${formatDate(booking.ønsket_dato)} · kl. ${booking.ønsket_tid}</p>
+                        <h4 class="font-medium text-lg">${escapeHtml(booking.navn)}</h4>
+                        <p class="text-sm text-gray-500">Booking #${escapeHtml(booking.id)} · ${escapeHtml(formatDate(booking.ønsket_dato))} · kl. ${escapeHtml(booking.ønsket_tid)}</p>
                     </div>
                     <div class="text-sm status-badge status-completed">Færdig</div>
                 </div>
                 <div class="text-sm text-gray-700 mb-3">
-                    <div>📞 ${booking.telefon}</div>
-                    ${booking.email ? `<div>✉️ ${booking.email}</div>` : ''}
-                    <div>💆‍♀️ ${booking.behandling || 'Kropsterapi'} - ${booking.betaling}</div>
-                    ${booking.besked ? `<div class="mt-2">💬 ${booking.besked}</div>` : ''}
+                    <div>📞 ${escapeHtml(booking.telefon)}</div>
+                    ${booking.email ? `<div>✉️ ${escapeHtml(booking.email)}</div>` : ''}
+                    <div>💆‍♀️ ${escapeHtml(booking.behandling || 'Kropsterapi')} - ${escapeHtml(booking.betaling)}</div>
+                    ${booking.besked ? `<div class="mt-2">💬 ${escapeHtml(booking.besked)}</div>` : ''}
                 </div>
             </div>
         `).join('');
@@ -280,16 +280,16 @@ async function loadCancelledBookings() {
             <div class="admin-card p-4 border-l-4 border-red-500">
                 <div class="flex justify-between items-start mb-2">
                     <div>
-                        <h4 class="font-medium text-lg">${booking.navn}</h4>
-                        <p class="text-sm text-gray-500">Booking #${booking.id} · ${formatDate(booking.ønsket_dato)} · kl. ${booking.ønsket_tid}</p>
+                        <h4 class="font-medium text-lg">${escapeHtml(booking.navn)}</h4>
+                        <p class="text-sm text-gray-500">Booking #${escapeHtml(booking.id)} · ${escapeHtml(formatDate(booking.ønsket_dato))} · kl. ${escapeHtml(booking.ønsket_tid)}</p>
                     </div>
                     <div class="text-sm status-badge status-cancelled">Annulleret</div>
                 </div>
                 <div class="text-sm text-gray-700 mb-3">
-                    <div>📞 ${booking.telefon}</div>
-                    ${booking.email ? `<div>✉️ ${booking.email}</div>` : ''}
-                    <div>💆‍♀️ ${booking.behandling || 'Kropsterapi'} - ${booking.betaling}</div>
-                    ${booking.besked ? `<div class="mt-2">💬 ${booking.besked}</div>` : ''}
+                    <div>📞 ${escapeHtml(booking.telefon)}</div>
+                    ${booking.email ? `<div>✉️ ${escapeHtml(booking.email)}</div>` : ''}
+                    <div>💆‍♀️ ${escapeHtml(booking.behandling || 'Kropsterapi')} - ${escapeHtml(booking.betaling)}</div>
+                    ${booking.besked ? `<div class="mt-2">💬 ${escapeHtml(booking.besked)}</div>` : ''}
                 </div>
             </div>
         `).join('');
