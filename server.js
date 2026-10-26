@@ -12,6 +12,7 @@ const { prisma, pool, testConnection } = require('./database/prisma');
 const { initDatabase } = require('./database/init');
 const bookingsRouter = require('./routes/bookings');
 const pagesRouter = require('./routes/pages');
+const { syncGoogleCalendar } = require('./utils/googleCalendar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -108,6 +109,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/mail', require('./routes/publicMail'));
 // Availability endpoint to check booked times for a date
 app.use('/api/availability', require('./routes/availability'));
+app.use('/api/calendar', require('./routes/googleCalendar'));
 
 // Page routes
 app.use('/', pagesRouter);
@@ -184,6 +186,12 @@ const startServer = async () => {
             console.log(`📱 Tryk Ctrl+C for at stoppe serveren`);
             console.log(`🗄️ Database: ${process.env.NODE_ENV === 'production' ? 'PostgreSQL (Railway)' : 'Local PostgreSQL'}`);
         });
+        if (process.env.GOOGLE_CALENDAR_ID && process.env.GOOGLE_REFRESH_TOKEN) {
+            const refresh = () => syncGoogleCalendar().catch(error =>
+                console.error('Periodic Google Calendar sync failed:', error));
+            refresh();
+            setInterval(refresh, 60 * 60 * 1000).unref();
+        }
     } catch (error) {
         console.error('❌ Failed to start server:', error);
         process.exit(1);

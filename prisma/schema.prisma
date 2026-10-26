@@ -76,6 +76,15 @@ model BlockedTime {
   @@unique([date, time])
 }
 
+model GoogleCalendarEvent {
+  id         String   @id
+  start_time DateTime
+  end_time   DateTime
+
+  @@map("google_calendar_events")
+  @@index([start_time, end_time])
+}
+
 model Session {
   sid    String   @id
   sess   Json
